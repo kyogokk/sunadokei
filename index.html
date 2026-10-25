@@ -790,8 +790,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   });
   $('#copyBtn').addEventListener('click', () => {
     const text = $('#shareText').value, note = $('#shareNote');
-    const fallback = () => { $('#shareText').select(); note.textContent = '文を選択しました。コピーして送ってください。'; };
-    try { navigator.clipboard.writeText(text).then(() => { note.textContent = '結果とリンクをコピーしました。LINE や DM にそのまま貼り付けて送れます。'; }, fallback); } catch (e) { fallback(); }
+    const done = () => { note.textContent = '結果とリンクをコピーしました。LINE や DM にそのまま貼り付けて送れます。'; };
+    const fallback = () => {
+      $('#shareText').select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      if (ok) done(); else note.textContent = '文を選択しました。コピーして送ってください。';
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
   });
 
   $('#resetBtn').addEventListener('click', () => { $('#resetBtn').hidden = true; $('#resetConfirm').hidden = false; });
