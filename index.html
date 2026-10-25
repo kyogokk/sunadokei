@@ -541,8 +541,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
   // ---------- 三通目 ----------
   const BOARD = {
-    even: ['びょうしん　みぎがわ', 'かぎは　あおいとうの', 'うらにある　しらべよ'],
-    odd:  ['びょうしん　みぎがわ', 'かぎは　あかいぞうの', 'うえにある　しらべろ'],
+    even: ['はやいはり　にしがわ', 'かぎは　あおいとうの', 'うらにある　しらべよ'],
+    odd:  ['はやいはり　にしがわ', 'かぎは　あかいぞうの', 'うえにある　しらべろ'],
   };
   let cells = null, boardParity = null;
   function buildBoard() {
@@ -564,8 +564,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     }, delay);
   }
   function updateBoard(d) {
-    // 秒針が右側（0〜29秒）なら本当、左側（30〜59秒）なら嘘
-    const p = d.getSeconds() < 30 ? 'even' : 'odd';
+    // 「はやいはり（秒針）　にしがわ（左半分）」は 30〜59秒なら本当、0〜29秒なら嘘
+    const p = d.getSeconds() < 30 ? 'odd' : 'even';
     $('#m3-next').textContent = String(30 - d.getSeconds() % 30);
     if (p === boardParity) return;
     const first = boardParity === null;
@@ -621,8 +621,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
          '燃え残りは「最後に燃えた二文字」と読める。最後まで残っていた二文字を思い出そう。そのままでは答えにならない。',
          '灰を復元した。最後に燃えた二文字は「少」と「石」。二つを合わせて一文字にすると「砂」。答えは「すな」。'],
     m3: ['掲示板を30秒以上見ていよう。書き換わる文字がある。',
-         '掲示板はいつも「秒針は右側」と言っている。それが嘘になるのは、秒針が左側、つまり30〜59秒のとき。',
-         '30〜59秒の掲示板にだけ現れる文字は4つ。上の行から、左から順に拾うと「かぞえろ」。'],
+         '掲示板はいつも「はやいはり　にしがわ」と言っている。いちばん速い針はどれ？　時計の西は、地図と同じ向き。',
+         '速い針は秒針、西は時計の左半分。0〜29秒のあいだ、掲示板は嘘をつく。そのときにだけ現れる文字は4つ。上の行から、左から順に拾うと「かぞえろ」。'],
     vault: ['砂時計は、最初からずっと画面のいちばん上にある。',
             '落ちた砂とは、封を切ってから過ぎた時間のこと。',
             () => '開封 ' + hms(new Date(S.openedAt)) + ' から今まで ' + elapsedSecs(Date.now())[0] + ' 秒。この数字を4桁にして、その秒数になった瞬間に押す。たとえば3分13秒なら 0193。'],
