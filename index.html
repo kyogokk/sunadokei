@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="制限時間5分、挑戦は一度きり。1分で死ぬパスワード、燃える手紙、嘘をつく掲示板、そして1秒だけ開く金庫。時間とともに価値を失う Web 謎解き。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="砂時計の伝言">
+<meta property="og:description" content="制限時間5分、挑戦は一度きり。1分で死ぬパスワード、燃える手紙、嘘をつく掲示板、そして1秒だけ開く金庫。時間とともに価値を失う Web 謎解き。">
+<meta property="og:url" content="https://kyogokk.github.io/sunadokei/">
+<meta name="twitter:card" content="summary">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>砂時計の伝言</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: 砂時計のバーを上に固定し、その下に「トークン端末・手紙・掲示板・金庫」という物を一列に並べる */
+:root{
+  --bg:#e7ebee; --surface:#f6f8f9; --ink:#17202a; --muted:#596572; --line:#c5ced6;
+  --sand:#a4691f; --ember:#c4401b; --flame:#d98a1c; --char:#3a2315; --ok:#2b7150;
+  --paper:#f1e9d6; --paper-ink:#291f16; --ash:#9b8f83;
+  --tile:#1b1f25; --tile-hi:#262b33; --tile-ink:#f1ede4; --tile-edge:#0c0e11; --tile-muted:#9aa3ad;
+  --lcd:#c4cfbf; --lcd-ink:#1a271c; --lcd-dim:#5f7261;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"DM Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1116; --surface:#151b22; --ink:#e6e2d9; --muted:#8e98a4; --line:#2a333e;
+    --sand:#e2ab52; --ember:#ff6a3c; --flame:#ffc864; --char:#1f1109; --ok:#5dbd88;
+    --paper:#e4dbc6; --paper-ink:#241a11; --ash:#7d7267;
+    --tile:#1d2229; --tile-hi:#272d35; --tile-ink:#f1ede4; --tile-edge:#07090b; --tile-muted:#8e98a4;
+    --lcd:#18221b; --lcd-ink:#9fe2a9; --lcd-dim:#5b8463;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1116; --surface:#151b22; --ink:#e6e2d9; --muted:#8e98a4; --line:#2a333e;
+  --sand:#e2ab52; --ember:#ff6a3c; --flame:#ffc864; --char:#1f1109; --ok:#5dbd88;
+  --paper:#e4dbc6; --paper-ink:#241a11; --ash:#7d7267;
+  --tile:#1d2229; --tile-hi:#272d35; --tile-ink:#f1ede4; --tile-edge:#07090b; --tile-muted:#8e98a4;
+  --lcd:#18221b; --lcd-ink:#9fe2a9; --lcd-dim:#5b8463;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.85;margin:0;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+
+/* 砂時計バー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{max-width:660px;margin:0 auto;display:flex;align-items:center;gap:14px;padding-block:8px}
+.glass{width:24px;height:40px;flex:none}
+.glass .sand{fill:var(--sand)}
+.glass .frame{fill:none;stroke:var(--ink);stroke-width:1.4;opacity:.7}
+.glass .cap{fill:var(--ink)}
+.glass .stream{stroke:var(--sand);stroke-width:1.1;stroke-dasharray:1.5 2.5;animation:pour 1s linear infinite}
+@keyframes pour{to{stroke-dashoffset:-8}}
+.times{display:flex;flex-wrap:wrap;gap:0 18px;margin:0;flex:1;min-width:0}
+.times div{display:flex;align-items:baseline;gap:6px}
+.times dt{font-size:11px;letter-spacing:.14em;color:var(--muted)}
+.times dd{margin:0;font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#tLeft{color:var(--sand);font-weight:500}
+
+/* 本文 */
+.wrap{max-width:660px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:22px}
+.hero{display:grid;gap:6px;padding-block:8px 4px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.24em;color:var(--muted)}
+.hero h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(34px,9vw,50px);line-height:1.25;letter-spacing:.08em;text-wrap:balance}
+.lede{margin:0;color:var(--muted);font-size:14px;max-width:34em}
+
+.card,.msg{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:22px 20px;display:grid;gap:16px;position:relative;min-width:0}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:0;font-size:13px}
+.meta dt{color:var(--muted);letter-spacing:.12em}
+.meta dd{margin:0}
+.voice{font-family:var(--f-display);font-size:16px;line-height:2;letter-spacing:.03em}
+.voice p{margin:0 0 1em}
+.voice p:last-child{margin-bottom:0}
+.sig{text-align:right;font-family:var(--f-display)}
+
+.btn{font:inherit;font-weight:700;font-size:15px;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:9px 18px;border-radius:3px;cursor:pointer;line-height:1.4}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-weight:500;font-size:13px;padding:6px 12px}
+.btn:hover{filter:brightness(1.1)}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+.confirm{border:1px solid var(--ember);border-radius:4px;padding:14px 16px;display:grid;gap:12px}
+.confirm p{margin:0;font-size:14px}
+.row-btns{display:flex;flex-wrap:wrap;gap:10px}
+.opened{margin:0;font-size:13px;color:var(--muted)}
+
+.msg-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;padding-right:64px}
+.num{font-family:var(--f-display);font-size:13px;letter-spacing:.22em;color:var(--muted)}
+.msg-h h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:24px;letter-spacing:.06em}
+.tag{font-size:11px;letter-spacing:.2em;border:1px solid currentColor;color:var(--muted);padding:0 6px;border-radius:2px}
+.stamp{position:absolute;top:14px;right:16px;width:50px;height:50px;border:2px solid var(--ember);border-radius:50%;color:var(--ember);font-family:var(--f-display);font-weight:800;font-size:22px;display:grid;place-items:center;transform:rotate(-12deg);opacity:.88}
+.msg:not(.done) .stamp{display:none}
+.msg.just .stamp{animation:stampin .45s cubic-bezier(.2,1.6,.5,1)}
+@keyframes stampin{from{transform:rotate(-12deg) scale(1.8);opacity:0}}
+
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.answer label{font-size:13px;color:var(--muted);letter-spacing:.1em;flex-basis:100%}
+.answer input{font-family:var(--f-mono);font-size:20px;letter-spacing:.18em;width:9em;max-width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink)}
+.answer input.kana{font-family:var(--f-body);letter-spacing:.12em}
+.fb{margin:0;min-height:1.6em;font-size:14px;color:var(--ember)}
+.fb.ok{color:var(--ok)}
+.hints{display:grid;gap:8px;justify-items:start}
+.hints ol{margin:0;padding-left:1.4em;font-size:14px;color:var(--muted);display:grid;gap:4px}
+.reward{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:12px}
+.keyword{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px}
+.keyword span{font-size:12px;letter-spacing:.16em;color:var(--muted)}
+.keyword b{font-family:var(--f-display);font-weight:800;font-size:30px;letter-spacing:.24em;color:var(--sand)}
+
+/* 一通目: 認証端末 */
+.device{background:var(--lcd);color:var(--lcd-ink);border-radius:6px;padding:14px 16px;font-family:var(--f-mono);box-shadow:inset 0 2px 0 color-mix(in srgb,var(--lcd-ink) 10%,transparent);min-width:0}
+.dev-top{display:flex;justify-content:space-between;gap:10px;font-size:11px;letter-spacing:.16em;color:var(--lcd-dim)}
+.log{width:100%;border-collapse:collapse;margin:10px 0 14px;font-variant-numeric:tabular-nums}
+.log caption{text-align:left;font-family:var(--f-body);font-size:12px;color:var(--lcd-dim);padding-bottom:4px}
+.log th{font-family:var(--f-body);font-weight:500;font-size:11px;color:var(--lcd-dim);text-align:left;border-bottom:1px solid color-mix(in srgb,var(--lcd-ink) 30%,transparent);padding:3px 0}
+.log td{padding:5px 0;font-size:14px;border-bottom:1px dotted color-mix(in srgb,var(--lcd-ink) 25%,transparent)}
+.log th:last-child,.log td:last-child{text-align:right;letter-spacing:.28em}
+.life{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:12px;font-family:var(--f-body)}
+.life b{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+.life-bar{grid-column:1/-1;height:6px;background:color-mix(in srgb,var(--lcd-ink) 15%,transparent);border-radius:3px;overflow:hidden}
+.life-bar i{display:block;height:100%;width:100%;background:var(--lcd-ink);transform-origin:left;transition:transform .25s linear}
+.life.dying .life-bar i{background:var(--ember)}
+.life.dying b{color:var(--ember)}
+
+/* 二通目: 燃える手紙 */
+.envelope{display:grid;gap:12px;justify-items:start}
+.letter{--p:0;background:var(--paper);color:var(--paper-ink);padding:26px 22px;border-radius:2px;box-shadow:inset 0 0 calc(var(--p) * 54px) color-mix(in srgb,var(--char) 75%,transparent);transition:box-shadow .6s}
+.letter-body{margin:0;font-family:var(--f-display);font-weight:500;font-size:17px;line-height:2.15;letter-spacing:.07em;word-break:break-all}
+.letter-body span{display:inline-block;min-width:1em;text-align:center;border-radius:40%}
+.letter-body .lit{color:var(--flame);text-shadow:0 0 10px var(--flame)}
+.letter-body .ember{color:var(--ember);opacity:var(--o,1);text-shadow:0 0 6px color-mix(in srgb,var(--ember) 55%,transparent);animation:flick .8s ease-in-out infinite}
+.letter-body .ash{color:transparent;background:radial-gradient(closest-side,color-mix(in srgb,var(--ash) 50%,transparent),transparent)}
+@keyframes flick{50%{filter:brightness(1.35)}}
+.burn-state{margin:0;font-size:13px;color:var(--muted)}
+.burn-state.hot{color:var(--ember)}
+
+/* 三通目: 時報屋の掲示板 */
+.board{background:var(--tile-edge);padding:10px;border-radius:6px;display:grid;gap:6px;min-width:0}
+.board-row{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.flap{position:relative;aspect-ratio:3/4;background:linear-gradient(var(--tile-hi) 0 50%,var(--tile) 50% 100%);color:var(--tile-ink);border-radius:3px;display:grid;place-items:center;font-weight:700;font-size:clamp(15px,4.4vw,25px);line-height:1;perspective:220px;overflow:hidden}
+.flap::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--tile-edge)}
+.flap b{display:block;font-weight:700}
+.flap.flip b{animation:flip .3s ease-in-out}
+@keyframes flip{50%{transform:rotateX(90deg)}}
+.board-foot{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);letter-spacing:.08em}
+.board-foot b{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* 金庫 */
+.vault{background:var(--tile);color:var(--tile-ink);border-color:var(--tile-edge)}
+.vault .num,.vault .tag,.vault .answer label,.vault .hints ol{color:var(--tile-muted)}
+.vault .btn{border-color:var(--tile-ink);color:var(--tile-ink)}
+.vault .btn.primary{background:var(--tile-ink);color:var(--tile)}
+.vault .btn.ghost{border-color:color-mix(in srgb,var(--tile-ink) 25%,transparent);color:var(--tile-muted)}
+.vault .answer input{background:var(--tile-edge);color:var(--tile-ink);border-color:color-mix(in srgb,var(--tile-ink) 25%,transparent)}
+.vault .fb{color:var(--flame)}
+.phrase{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;font-family:var(--f-display);font-size:24px;font-weight:700}
+.slot{display:grid;gap:2px;background:var(--tile-hi);border:1px solid color-mix(in srgb,var(--tile-ink) 18%,transparent);padding:6px 12px;border-radius:3px;letter-spacing:.14em}
+.slot small{font-family:var(--f-body);font-weight:400;font-size:10px;letter-spacing:.14em;color:var(--tile-muted)}
+.joint{padding-bottom:7px}
+.unit{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-size:18px}
+
+/* 結末と失効 */
+.ending{background:var(--paper);color:var(--paper-ink);border-color:transparent}
+.ending .voice{font-size:17px}
+.record{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;margin:0;font-size:14px;border-top:1px solid color-mix(in srgb,var(--paper-ink) 20%,transparent);padding-top:14px}
+.record dt{color:color-mix(in srgb,var(--paper-ink) 60%,transparent);letter-spacing:.1em}
+.record dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.share{display:grid;gap:10px}
+.share a.btn{text-decoration:none;display:inline-block}
+.share-note{margin:0;font-size:13px;min-height:1.4em}
+.share textarea{width:100%;box-sizing:border-box;resize:none;min-width:0;font-family:var(--f-mono);font-size:13px;line-height:1.7;padding:8px 10px;border:1px solid color-mix(in srgb,var(--paper-ink) 25%,transparent);border-radius:3px;background:transparent;color:var(--paper-ink)}
+.ending .btn{border-color:var(--paper-ink);color:var(--paper-ink)}
+.ending .btn.primary{background:var(--paper-ink);color:var(--paper)}
+.ending .btn.ghost{border-color:color-mix(in srgb,var(--paper-ink) 30%,transparent);color:color-mix(in srgb,var(--paper-ink) 70%,transparent)}
+.expired{text-align:center;justify-items:center;padding-block:40px}
+.big-stamp{display:inline-block;font-family:var(--f-display);font-weight:800;font-size:60px;letter-spacing:.2em;line-height:1.2;color:var(--ember);border:4px solid var(--ember);border-radius:8px;padding:4px 10px 4px 22px;transform:rotate(-7deg)}
+.expired p{margin:0}
+.foot{margin:0;font-size:12px;color:var(--muted);text-align:center}
+
+@media (prefers-reduced-motion: reduce){
+  .glass .stream,.letter-body .ember,.flap.flip b,.msg.just .stamp{animation:none}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <svg class="glass" viewBox="0 0 40 64" aria-hidden="true">
+      <defs>
+        <clipPath id="gTop"><path d="M9 7 C9 21 18 26 18.6 32 L21.4 32 C22 26 31 21 31 7 Z"/></clipPath>
+        <clipPath id="gBot"><path d="M18.6 32 C18 38 9 43 9 57 L31 57 C31 43 22 38 21.4 32 Z"/></clipPath>
+      </defs>
+      <rect id="sTop" class="sand" x="0" y="7" width="40" height="25" clip-path="url(#gTop)"/>
+      <rect id="sBot" class="sand" x="0" y="57" width="40" height="0" clip-path="url(#gBot)"/>
+      <line id="sStream" class="stream" x1="20" y1="31" x2="20" y2="57" visibility="hidden"/>
+      <path class="frame" d="M9 7 C9 21 18 26 18.6 32 C18 38 9 43 9 57 M31 7 C31 21 22 26 21.4 32 C22 38 31 43 31 57"/>
+      <rect class="cap" x="5" y="3" width="30" height="4" rx="1"/>
+      <rect class="cap" x="5" y="57" width="30" height="4" rx="1"/>
+    </svg>
+    <dl class="times">
+      <div><dt>開封</dt><dd id="tOpen">未開封</dd></div>
+      <div><dt>失効</dt><dd id="tExp">—</dd></div>
+      <div><dt>残り</dt><dd id="tLeft">05:00</dd></div>
+      <div><dt>現在</dt><dd id="tNow">--:--:--</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <p class="eyebrow">WEB 謎解き</p>
+    <h1>砂時計の伝言</h1>
+    <p class="lede">時間とともに価値を失う三通の伝言と、金庫がひとつ。制限時間は5分、挑戦は一度きり。メモできるものがあると便利です。途中でページを閉じても、砂は止まりません。</p>
+  </div>
+
+  <section class="card" id="intro" aria-labelledby="intro-h">
+    <dl class="meta">
+      <dt>差出人</dt><dd>砂時計</dd>
+      <dt id="intro-h">件名</dt><dd>三通の伝言と、金庫がひとつ</dd>
+    </dl>
+    <div class="voice">
+      <p>この封を切った瞬間から、砂が落ちはじめる。<br>落ちきるまで、五分。<br>そのあいだに三通の伝言を解いて、最後の金庫を開けてほしい。</p>
+      <p>先に言っておく。<br>私の伝言は、どれも時間とともに価値を失う。<br>一分で死ぬものもあれば、一度しか読めないものもある。<br>砂が落ちきったら、この伝言は二度と、誰にも解けない。</p>
+      <p class="sig">砂時計</p>
+    </div>
+    <div id="sealArea" class="envelope">
+      <button class="btn primary" id="sealBtn" type="button">封を切る</button>
+      <div class="confirm" id="sealConfirm" hidden>
+        <p>一度切った封は戻せません。いまから5分後に、この伝言は失効します。途中でページを閉じても時間は止まりません。</p>
+        <div class="row-btns">
+          <button class="btn primary" id="sealYes" type="button">封を切る</button>
+          <button class="btn" id="sealNo" type="button">まだ切らない</button>
+        </div>
+      </div>
+    </div>
+    <p class="opened" id="openedLine" hidden></p>
+  </section>
+
+  <section class="msg" id="m1" hidden aria-labelledby="m1-h">
+    <div class="msg-h"><span class="num">一通目</span><h2 id="m1-h">ワンタイム</h2><span class="tag">失効</span></div>
+    <div class="stamp" aria-label="解読済み">済</div>
+    <div class="voice">
+      <p>一通目には鍵をかけた。<br>鍵のパスワードは一分ごとに生まれ変わって、一分で死ぬ。<br>死んだパスワードには、もう何の価値もない。<br>下に、これまで鍵が開いたときの記録を残しておく。</p>
+    </div>
+    <div class="device ctl">
+      <div class="dev-top"><span>SUNADOKEI AUTH</span><span id="m1-clock">--:--:--</span></div>
+      <table class="log">
+        <caption>認証ログ（成功した記録）</caption>
+        <thead><tr><th scope="col">日時</th><th scope="col">パスワード</th></tr></thead>
+        <tbody id="m1-log"></tbody>
+      </table>
+      <div class="life" id="m1-life"><span>いまのパスワードの寿命</span><b id="m1-sec">60秒</b><div class="life-bar"><i id="m1-bar"></i></div></div>
+    </div>
+    <form class="answer ctl" id="m1-form" autocomplete="off">
+      <label for="m1-in">パスワード（4桁）</label>
+      <input id="m1-in" inputmode="numeric" maxlength="8" placeholder="0000">
+      <button class="btn primary" type="submit">認証</button>
+    </form>
+    <p class="fb ctl" id="m1-fb" aria-live="polite"></p>
+    <div class="hints ctl" data-k="m1"><button class="btn ghost" type="button"></button><ol></ol></div>
+    <div class="reward" hidden>
+      <div class="voice"><p>認証成功。<br>間に合ったね。でも、いま君が打ったパスワードは、もう死んだ。<br>一分前の正解は、いまはただの数字の並びだ。<br>だから数字は捨てていい。持っていくのは、この言葉だけ。</p></div>
+      <div class="keyword"><span>鍵の言葉　一</span><b>おちた</b></div>
+    </div>
+  </section>
+
+  <section class="msg" id="m2" hidden aria-labelledby="m2-h">
+    <div class="msg-h"><span class="num">二通目</span><h2 id="m2-h">燃える手紙</h2><span class="tag">焼失</span></div>
+    <div class="stamp" aria-label="解読済み">済</div>
+    <div class="voice">
+      <p>二通目は手紙にした。<br>封を開けると火がつく。あっという間に燃え尽きて、二度と読めなくなる。<br>読み返すことはできない。開けたら、最後まで目を離さないで。</p>
+    </div>
+    <div class="envelope" id="m2-env">
+      <button class="btn primary" id="m2-open" type="button">手紙を開ける</button>
+      <div class="confirm" id="m2-confirm" hidden>
+        <p>開けた瞬間に火がつきます。燃えはじめたら止められません。</p>
+        <div class="row-btns">
+          <button class="btn primary" id="m2-yes" type="button">開ける</button>
+          <button class="btn" id="m2-no" type="button">まだ開けない</button>
+        </div>
+      </div>
+    </div>
+    <div class="letter" id="m2-letter" hidden><p class="letter-body" id="m2-text"></p></div>
+    <p class="burn-state" id="m2-state" hidden></p>
+    <form class="answer ctl" id="m2-form" autocomplete="off" hidden>
+      <label for="m2-in">答え</label>
+      <input id="m2-in" class="kana" maxlength="12" placeholder="答え">
+      <button class="btn primary" type="submit">答える</button>
+    </form>
+    <p class="fb ctl" id="m2-fb" aria-live="polite"></p>
+    <div class="hints ctl" data-k="m2" hidden><button class="btn ghost" type="button"></button><ol></ol></div>
+    <div class="reward" hidden>
+      <div class="voice"><p id="m2-reward"></p></div>
+      <div class="keyword"><span>鍵の言葉　二</span><b>すな</b></div>
+    </div>
+  </section>
+
+  <section class="msg" id="m3" hidden aria-labelledby="m3-h">
+    <div class="msg-h"><span class="num">三通目</span><h2 id="m3-h">時報屋の掲示板</h2><span class="tag">反転</span></div>
+    <div class="stamp" aria-label="解読済み">済</div>
+    <div class="voice">
+      <p>三通目は時報屋に預けた。<br>あいつの掲示板は、三十秒ごとに書き換わる。そして、ひとつおきに嘘をつく。<br>嘘をついているあいだにだけ現れる文字を、拾い集めてほしい。</p>
+    </div>
+    <div class="board ctl" id="m3-board"></div>
+    <div class="board-foot ctl"><span>時報屋</span><span>次の書き換えまで <b id="m3-next">--</b>秒</span></div>
+    <form class="answer ctl" id="m3-form" autocomplete="off">
+      <label for="m3-in">拾った文字</label>
+      <input id="m3-in" class="kana" maxlength="12" placeholder="ひらがな">
+      <button class="btn primary" type="submit">答える</button>
+    </form>
+    <p class="fb ctl" id="m3-fb" aria-live="polite"></p>
+    <div class="hints ctl" data-k="m3"><button class="btn ghost" type="button"></button><ol></ol></div>
+    <div class="reward" hidden>
+      <div class="voice"><p>嘘も、三十秒たてば消える。<br>でも、拾った文字は君の手の中に残る。</p></div>
+      <div class="keyword"><span>鍵の言葉　三</span><b>かぞえろ</b></div>
+    </div>
+  </section>
+
+  <section class="msg vault" id="vault" hidden aria-labelledby="v-h">
+    <div class="msg-h"><span class="num">最後</span><h2 id="v-h">金庫</h2><span class="tag">一秒ごと</span></div>
+    <div class="voice">
+      <p>最後は金庫。<br>この鍵は、一秒ごとに変わる。開けられるのは、その一秒だけ。<br>三つの言葉が、鍵の数え方を教えてくれる。</p>
+    </div>
+    <div class="phrase" aria-label="おちた すな を かぞえろ">
+      <span class="slot"><small>一通目</small>おちた</span>
+      <span class="slot"><small>二通目</small>すな</span>
+      <span class="joint">を</span>
+      <span class="slot"><small>三通目</small>かぞえろ</span>
+    </div>
+    <form class="answer ctl" id="v-form" autocomplete="off">
+      <label for="v-in">解錠コード（4桁）</label>
+      <span class="unit"><input id="v-in" inputmode="numeric" maxlength="8" placeholder="0000">秒</span>
+      <button class="btn primary" type="submit">開ける</button>
+    </form>
+    <p class="fb ctl" id="v-fb" aria-live="polite"></p>
+    <div class="hints ctl" data-k="vault"><button class="btn ghost" type="button"></button><ol></ol></div>
+  </section>
+
+  <section class="card ending" id="ending" hidden aria-label="結末">
+    <div class="voice" id="endText"></div>
+    <dl class="record" id="record"></dl>
+    <div class="share">
+      <textarea id="shareText" readonly rows="4" aria-label="共有する文"></textarea>
+      <div class="row-btns">
+        <button class="btn primary" id="copyBtn" type="button">結果を共有する</button>
+        <a class="btn" id="xLink" href="https://x.com/" target="_blank" rel="noopener">X に投稿</a>
+      </div>
+      <p class="share-note" id="shareNote" aria-live="polite"></p>
+    </div>
+    <div class="envelope">
+      <button class="btn ghost" id="resetBtn" type="button">記録を消して最初から</button>
+      <div class="confirm" id="resetConfirm" hidden>
+        <p>この記録は消え、封を切る前の状態に戻ります。</p>
+        <div class="row-btns">
+          <button class="btn primary" id="resetYes" type="button">記録を消す</button>
+          <button class="btn" id="resetNo" type="button">やめる</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card expired" id="expired" hidden aria-label="失効">
+    <div class="big-stamp">失効</div>
+    <div class="voice" id="expText"></div>
+  </section>
+
+  <p class="foot">進み具合はこのブラウザに記録されます。</p>
+</main>
+
+<script>
+(() => {
+  const LIFE = 5 * 60 * 1000;
+  const KEY = 'sunadokei-no-dengon/v4';
+  const EMBER = 8000;
+  const SHARE_URL = 'https://kyogokk.github.io/sunadokei/';
+  const DEF = () => ({ v: 1, openedAt: null, s1: null, s2burn: null, s2: null, s3: null, fin: null,
+    hints: { m1: 0, m2: 0, m3: 0, vault: 0 }, rescue: false });
+
+  const $ = s => document.querySelector(s);
+  const pad = n => String(n).padStart(2, '0');
+  const hm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+  const hms = d => hm(d) + ':' + pad(d.getSeconds());
+  const stamp = ms => { const d = new Date(ms); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm(d); };
+  const stampS = ms => { const d = new Date(ms); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hms(d); };
+  const dur = ms => { const t = Math.max(0, Math.ceil(ms / 1000)); return pad(Math.floor(t / 60)) + ':' + pad(t % 60); };
+  const minIdx = ms => Math.floor(ms / 60000);
+  const norm = s => (s || '').normalize('NFKC').replace(/\s+/g, '')
+    .replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  // 一通目のパスワード: 時刻 HHMM の各桁を 9 から引いたもの
+  const tokenAt = ms => { const d = new Date(ms); return (pad(d.getHours()) + pad(d.getMinutes())).split('').map(c => 9 - Number(c)).join(''); };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- 状態 ----------
+  function clean(o) {
+    const d = DEF();
+    if (!o || typeof o !== 'object') return d;
+    const num = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+    for (const k of ['openedAt', 's1', 's2burn', 's2', 's3', 'fin']) d[k] = num(o[k]);
+    if (o.hints && typeof o.hints === 'object') for (const k in d.hints) d.hints[k] = Math.min(3, Math.max(0, num(o.hints[k]) || 0));
+    d.rescue = o.rescue === true;
+    return d;
+  }
+  function merge(a, b) {
+    const m = DEF();
+    const early = (x, y) => x == null ? y : y == null ? x : Math.min(x, y);
+    for (const k of ['openedAt', 's1', 's2burn', 's2', 's3', 'fin']) m[k] = early(a[k], b[k]);
+    for (const k in m.hints) m.hints[k] = Math.max(a.hints[k], b.hints[k]);
+    m.rescue = a.rescue || b.rescue;
+    return m;
+  }
+  function loadLocal() {
+    try { const raw = localStorage.getItem(KEY); if (raw) return clean(JSON.parse(raw)); } catch (e) {}
+    return DEF();
+  }
+  let S = loadLocal();
+  let remote = null, writing = false, again = false;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    pushRemote();
+  }
+  async function pushRemote() {
+    if (!remote) return;
+    if (writing) { again = true; return; }
+    writing = true;
+    try { await remote.set(JSON.parse(JSON.stringify(S))); }
+    catch (e) { if (!e || e.code !== 'unavailable') remote = null; }
+    writing = false;
+    if (again) { again = false; pushRemote(); }
+  }
+  async function initRemote() {
+    if (!window.claude || typeof window.claude.use !== 'function') return;
+    try {
+      const user = await window.claude.use('user');
+      if (!user) return;
+      if ((await user.can('data.write')) === false) return;
+      const db = await window.claude.use('db');
+      const id = await user.id();
+      if (!db || !id) return;
+      const ref = db.doc('data/users/' + id + '/progress-v4');
+      const snap = await ref.get();
+      const before = JSON.stringify(S);
+      if (snap.exists) S = merge(S, clean(snap.data()));
+      remote = ref;
+      try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+      const theirs = snap.exists ? JSON.stringify(clean(snap.data())) : null;
+      if (JSON.stringify(S) !== theirs && S.openedAt != null) pushRemote();
+      if (JSON.stringify(S) !== before) render();
+    } catch (e) { remote = null; }
+  }
+
+  // ---------- 一通目 ----------
+  // 年・日付・曜日はおとり。パスワードを決めるのは時刻だけ
+  const LOG = [[2019, 3, 14, 7, 58], [2023, 11, 2, 12, 34], [2011, 8, 27, 0, 0], [2008, 12, 25, 19, 20], [2025, 1, 19, 21, 9]];
+  const WD = '日月火水木金土';
+  function renderLog() {
+    const tb = $('#m1-log');
+    if (tb.childElementCount) return;
+    for (const [y, mo, da, h, m] of LOG) {
+      const d = new Date(y, mo - 1, da, h, m);
+      const tr = document.createElement('tr');
+      const a = document.createElement('td'); a.textContent = y + '/' + pad(mo) + '/' + pad(da) + '(' + WD[d.getDay()] + ') ' + hm(d);
+      const b = document.createElement('td'); b.textContent = tokenAt(d.getTime());
+      tr.append(a, b); tb.append(tr);
+    }
+  }
+  function logCodes() { return [...$('#m1-log').querySelectorAll('td:last-child')].map(td => td.textContent); }
+  function checkM1(raw) {
+    const v = norm(raw), now = Date.now();
+    if (v === tokenAt(now)) return solve('s1', '#m1');
+    if (v === tokenAt(now - 60000)) return fb('#m1-fb', '失効済み。そのパスワードは ' + hm(new Date(now - 60000)) + ' には正しかった。いまはもう何の意味も持たない。');
+    if (logCodes().includes(v)) return fb('#m1-fb', 'それは記録に残った昔のパスワード。とっくに死んでいる。');
+    const d = new Date(now);
+    if (v === pad(d.getHours()) + pad(d.getMinutes())) return fb('#m1-fb', '時刻をそのまま打っても開かない。でも、時刻と無関係でもない。');
+    if (!/^\d{4}$/.test(v)) return fb('#m1-fb', 'パスワードは4桁の数字。');
+    fb('#m1-fb', '認証失敗。');
+  }
+
+  // ---------- 二通目 ----------
+  const LETTER = '二通目だ。答えを急ぐな。この手紙は、最後まで読む前に消えるだろう。君に残された時間は少ない。燃えた紙は二度と戻らない。石に刻んだ文字とは違う。あとは思い出すことしかできない。';
+  const KEEP = '最後に燃えた二文字';
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const BURN = (() => {
+    const chars = [...LETTER];
+    const keep = new Set();
+    for (let i = 0, j = 0; i < chars.length && j < KEEP.length; i++) if (chars[i] === KEEP[j]) { keep.add(i); j++; }
+    // 最後に燃える二文字は「少」と「石」。合わせると「砂」
+    const su = LETTER.indexOf('少'), na = LETTER.indexOf('石');
+    // 終盤まで残るおとりの漢字。少と石だけが目立たないように混ぜる
+    const late = ['紙', '刻', '時', '違', '手', '読'].map(c => LETTER.indexOf(c));
+    const rnd = mulberry32(20261025);
+    const pool = [];
+    chars.forEach((c, i) => { if (!keep.has(i) && i !== na && i !== su && !late.includes(i)) pool.push({ i, k: rnd() }); });
+    pool.sort((a, b) => a.k - b.k);
+    const at = new Array(chars.length).fill(null);
+    let t = 2400;
+    for (const p of pool) { at[p.i] = t; t += 260 + rnd() * 200; }
+    t += 600;
+    const tail = late.map(i => ({ i, k: rnd() })).sort((a, b) => a.k - b.k).map(p => p.i).concat([su, na]);
+    for (const i of tail) { at[i] = t; t += 1100 + rnd() * 300; }
+    return { chars, at, end: at[na] };
+  })();
+  let spans = null, burnDone = false;
+  function buildLetter() {
+    if (spans) return;
+    const box = $('#m2-text');
+    spans = BURN.chars.map(c => { const s = document.createElement('span'); s.textContent = c; box.append(s); return s; });
+  }
+  function updateBurn(now) {
+    if (!spans || burnDone) return;
+    const t = now - S.s2burn;
+    BURN.chars.forEach((c, i) => {
+      const at = BURN.at[i]; if (at == null) return;
+      const a = t - at, s = spans[i];
+      let st = a < 0 ? 'ink' : a < 500 ? 'lit' : a < EMBER ? 'ember' : 'ash';
+      if (s.dataset.st !== st) {
+        s.dataset.st = st; s.className = st === 'ink' ? '' : st;
+        if (st === 'ash') { s.textContent = '　'; s.style.removeProperty('--o'); }
+      }
+      if (st === 'ember') s.style.setProperty('--o', (1 - 0.72 * (a - 500) / (EMBER - 500)).toFixed(3));
+    });
+    $('#m2-letter').style.setProperty('--p', Math.min(1, Math.max(0, t / BURN.end)).toFixed(3));
+    const st = $('#m2-state');
+    st.hidden = false;
+    if (t < BURN.end + EMBER) { st.textContent = '燃えている。目を離さないで。'; st.className = 'burn-state hot'; }
+    else { st.textContent = '燃え尽きた。この手紙は、もう誰にも読めない。'; st.className = 'burn-state'; burnDone = true; }
+  }
+  function checkM2(raw) {
+    const v = norm(raw);
+    if (v === 'すな' || v === '砂') return solve('s2', '#m2');
+    if (v.includes('少') && v.includes('石')) return fb('#m2-fb', 'その二文字で合っている。二つを一文字にしてみて。');
+    if (Date.now() - S.s2burn < BURN.end) return fb('#m2-fb', '違う。まずは手紙が燃え尽きるまで見届けて。');
+    if (/最後|二文字|答え|燃え/.test(v)) return fb('#m2-fb', 'それは燃え残った文字。答えは、燃えたほうにある。');
+    fb('#m2-fb', '違う。');
+  }
+
+  // ---------- 三通目 ----------
+  const BOARD = {
+    even: ['びょうしん　みぎがわ', 'かぎは　あおいとうの', 'うらにある　しらべよ'],
+    odd:  ['びょうしん　みぎがわ', 'かぎは　あかいぞうの', 'うえにある　しらべろ'],
+  };
+  let cells = null, boardParity = null;
+  function buildBoard() {
+    if (cells) return;
+    const b = $('#m3-board'); cells = [];
+    for (let r = 0; r < 3; r++) {
+      const row = document.createElement('div'); row.className = 'board-row';
+      for (let c = 0; c < 10; c++) { const f = document.createElement('span'); f.className = 'flap'; const ch = document.createElement('b'); f.append(ch); row.append(f); cells.push(f); }
+      b.append(row);
+    }
+  }
+  function setFlap(f, ch, delay, animate) {
+    const b = f.firstChild;
+    if (!animate || reduced) { b.textContent = ch; return; }
+    setTimeout(() => {
+      f.classList.remove('flip'); void f.offsetWidth; f.classList.add('flip');
+      setTimeout(() => { b.textContent = ch; }, 150);
+      setTimeout(() => f.classList.remove('flip'), 320);
+    }, delay);
+  }
+  function updateBoard(d) {
+    // 秒針が右側（0〜29秒）なら本当、左側（30〜59秒）なら嘘
+    const p = d.getSeconds() < 30 ? 'even' : 'odd';
+    $('#m3-next').textContent = String(30 - d.getSeconds() % 30);
+    if (p === boardParity) return;
+    const first = boardParity === null;
+    const text = [...BOARD[p].join('')];
+    cells.forEach((f, i) => {
+      const cur = f.firstChild.textContent;
+      if (first) setFlap(f, text[i], i * 22, true);
+      else if (cur !== text[i]) setFlap(f, text[i], i * 18, true);
+    });
+    boardParity = p;
+  }
+  function checkM3(raw) {
+    const v = norm(raw);
+    if (v === 'かぞえろ' || v === '数えろ') return solve('s3', '#m3');
+    if (v === 'おとらよ') return fb('#m3-fb', 'それは時報屋が本当のことを言っているときの文字。拾うのは嘘のほう。');
+    if (/あおいとう|あかいぞう|うら|うえ/.test(v)) return fb('#m3-fb', '違う。掲示板の言うことを信じる必要はない。');
+    fb('#m3-fb', '違う。');
+  }
+
+  // ---------- 金庫 ----------
+  // 鍵は封を切ってからの経過秒数。押した瞬間の1秒だけ有効（表示の読み方の差で隣の1秒も許す）
+  function elapsedSecs(now) {
+    return [Math.floor((now - S.openedAt) / 1000), Math.floor(now / 1000) - Math.floor(S.openedAt / 1000)];
+  }
+  function parseSecs(v) {
+    let m;
+    if ((m = v.match(/^(\d+):(\d{1,2})$/))) return Number(m[1]) * 60 + Number(m[2]);
+    if ((m = v.match(/^(\d{1,4})秒?$/))) return Number(m[1]);
+    return null;
+  }
+  function checkVault(raw) {
+    const now = Date.now(), n = parseSecs(norm(raw));
+    if (n == null) return fb('#v-fb', '4桁の数字を入れて。');
+    const cur = elapsedSecs(now);
+    if (cur.includes(n)) return solve('fin', '#vault');
+    const e = cur[0];
+    if (n > e && n - e <= 10) return fb('#v-fb', '早い。');
+    if (n < e && e - n <= 10) return fb('#v-fb', '遅い。その砂はもう落ちた。');
+    const left = Math.ceil((S.openedAt + LIFE - now) / 1000);
+    if (Math.abs(n - left) <= 2) return fb('#v-fb', 'それは、まだ落ちていない砂。');
+    if (n === Math.floor(e / 60)) return fb('#v-fb', '粗すぎる。砂は一粒ずつ数える。');
+    const d = new Date(now);
+    if (n === d.getHours() * 100 + d.getMinutes() || n === d.getMinutes() * 100 + d.getSeconds()) return fb('#v-fb', '時計を見ても、砂は数えられない。');
+    fb('#v-fb', '金庫は沈黙している。');
+  }
+
+  // ---------- ヒント ----------
+  const HINTS = {
+    m1: ['年や日付、曜日は気にしなくていい。認証ログの「時刻」と「パスワード」を、同じ位置の数字どうしで見比べよう。12:34 と 00:00 がわかりやすい。',
+         '同じ位置の数字を足してみよう。どの記録でも同じ数になる。',
+         '同じ位置どうしを足すと必ず 9 になる。いまの時刻の4桁を、それぞれ 9 から引いた数がパスワード。たとえば 14:32 なら 8567。'],
+    m2: ['燃え残った文字を、左から順に読んでみよう。',
+         '燃え残りは「最後に燃えた二文字」と読める。最後まで残っていた二文字を思い出そう。そのままでは答えにならない。',
+         '灰を復元した。最後に燃えた二文字は「少」と「石」。二つを合わせて一文字にすると「砂」。答えは「すな」。'],
+    m3: ['掲示板を30秒以上見ていよう。書き換わる文字がある。',
+         '掲示板はいつも「秒針は右側」と言っている。それが嘘になるのは、秒針が左側、つまり30〜59秒のとき。',
+         '30〜59秒の掲示板にだけ現れる文字は4つ。上の行から、左から順に拾うと「かぞえろ」。'],
+    vault: ['砂時計は、最初からずっと画面のいちばん上にある。',
+            '落ちた砂とは、封を切ってから過ぎた時間のこと。',
+            () => '開封 ' + hms(new Date(S.openedAt)) + ' から今まで ' + elapsedSecs(Date.now())[0] + ' 秒。この数字を4桁にして、その秒数になった瞬間に押す。たとえば3分13秒なら 0193。'],
+  };
+  function renderHints(k) {
+    const box = document.querySelector('.hints[data-k="' + k + '"]');
+    const n = S.hints[k], ol = box.querySelector('ol'), btn = box.querySelector('button');
+    ol.textContent = '';
+    for (let i = 0; i < n; i++) { const li = document.createElement('li'); const h = HINTS[k][i]; li.textContent = typeof h === 'function' ? h() : h; ol.append(li); }
+    btn.hidden = n >= 3;
+    btn.textContent = n === 2 ? (k === 'm2' ? '灰を復元する（答え）' : '答えを見る') : 'ヒントを見る（' + (n + 1) + '/3）';
+  }
+  document.querySelectorAll('.hints').forEach(box => box.querySelector('button').addEventListener('click', () => {
+    const k = box.dataset.k;
+    S.hints[k] = Math.min(3, S.hints[k] + 1);
+    if (k === 'm2' && S.hints.m2 === 3) S.rescue = true;
+    save(); renderHints(k);
+  }));
+
+  // ---------- 共通 ----------
+  function fb(sel, text, ok) { const el = $(sel); el.textContent = text; el.classList.toggle('ok', !!ok); }
+  function solve(key, sel) {
+    if (S[key] != null) return;
+    S[key] = Date.now(); save();
+    const sec = $(sel); sec.classList.add('just');
+    sec.querySelector('.fb').textContent = '';
+    render();
+    const next = { '#m1': '#m2', '#m2': '#m3', '#m3': '#vault', '#vault': '#ending' }[sel];
+    setTimeout(() => $(next).scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 650);
+  }
+  function setDone(sel, done) {
+    const sec = $(sel);
+    sec.classList.toggle('done', done);
+    sec.querySelectorAll('.ctl').forEach(el => { if (done) el.hidden = true; });
+    const rw = sec.querySelector('.reward'); if (rw) rw.hidden = !done;
+  }
+  function isExpired(now) { return S.openedAt != null && S.fin == null && now >= S.openedAt + LIFE; }
+
+  function render() {
+    const now = Date.now(), opened = S.openedAt != null, expired = isExpired(now);
+    $('#intro').hidden = expired;
+    $('#sealArea').hidden = opened;
+    $('#openedLine').hidden = !opened;
+    if (opened) $('#openedLine').textContent = stampS(S.openedAt) + '、封を切った。砂が落ちはじめている。';
+    $('#m1').hidden = expired || !opened;
+    $('#m2').hidden = expired || S.s1 == null;
+    $('#m3').hidden = expired || S.s2 == null;
+    $('#vault').hidden = expired || S.s3 == null;
+    $('#ending').hidden = S.fin == null;
+    $('#expired').hidden = !expired;
+
+    if (opened) renderLog();
+    if (S.s2burn != null) {
+      $('#m2-env').hidden = true; $('#m2-letter').hidden = false; buildLetter();
+      if (S.s2 == null) { $('#m2-form').hidden = false; document.querySelector('.hints[data-k="m2"]').hidden = false; }
+      updateBurn(now);
+    }
+    if (S.s1 != null) buildBoard();
+    setDone('#m1', S.s1 != null);
+    setDone('#m2', S.s2 != null);
+    setDone('#m3', S.s3 != null);
+    setDone('#vault', S.fin != null);
+    $('#m2-reward').textContent = S.rescue ? '灰から読み取ったね。少しずるいけれど、まあいい。燃え尽きた手紙は、もう誰にも読めない。' : '燃え尽きた手紙は、もう誰にも読めない。でも、君は最後まで見ていた。';
+    for (const k in HINTS) renderHints(k);
+    if (S.fin != null) renderEnding();
+    if (expired) renderExpired();
+    tick();
+  }
+
+  function renderEnding() {
+    const secs = Math.floor((S.fin - S.openedAt) / 1000);
+    const span = Math.floor(secs / 60) + '分' + (secs % 60) + '秒';
+    const box = $('#endText'); box.textContent = '';
+    const paras = [
+      ['開いたね。', '金庫の鍵は、君が封を切ってから過ぎた時間だった。'],
+      ['パスワードは一分で死んだ。手紙は灰になった。時報屋は嘘をついた。', '私の伝言は、どれも時間とともに価値を失っていった。'],
+      ['でも、落ちた砂は上に戻らないかわりに、消えもしない。', '君がここで使った' + span + 'は、もう誰にも失効させられない。'],
+    ];
+    for (const lines of paras) { const p = document.createElement('p'); lines.forEach((l, i) => { if (i) p.append(document.createElement('br')); p.append(l); }); box.append(p); }
+    const sig = document.createElement('p'); sig.className = 'sig'; sig.textContent = '砂時計'; box.append(sig);
+    const hints = S.hints.m1 + S.hints.m2 + S.hints.m3 + S.hints.vault;
+    const rec = $('#record'); rec.textContent = '';
+    for (const [k, v] of [['開封', stampS(S.openedAt)], ['解錠', stampS(S.fin)], ['かかった時間', span], ['ヒント', hints + '回'], ['灰の復元', S.rescue ? 'した' : 'しなかった']]) {
+      const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; rec.append(dt, dd);
+    }
+    const lap = ms => { const s = Math.floor((ms - S.openedAt) / 1000); return Math.floor(s / 60) + ':' + pad(s % 60); };
+    const text = '砂時計の伝言　' + span + 'でクリア（制限' + Math.round(LIFE / 60000) + '分）\n'
+      + '一通目 ' + lap(S.s1) + '／二通目 ' + lap(S.s2) + '／三通目 ' + lap(S.s3) + '／金庫 ' + lap(S.fin) + '\n'
+      + 'ヒント' + hints + '回' + (S.rescue ? '・灰の復元あり' : '') + '\n' + SHARE_URL;
+    $('#shareText').value = text;
+    $('#xLink').href = 'https://x.com/intent/post?text=' + encodeURIComponent(text);
+  }
+  function renderExpired() {
+    const solved = [S.s1, S.s2, S.s3].filter(x => x != null).length;
+    const box = $('#expText'); box.textContent = '';
+    const p = document.createElement('p');
+    ['砂が落ちきった。', stamp(S.openedAt + LIFE) + '、この伝言は失効した。', 'もう誰にも解けない。'].forEach((l, i) => { if (i) p.append(document.createElement('br')); p.append(l); });
+    const q = document.createElement('p'); q.className = 'opened'; q.textContent = '解いた伝言　' + solved + ' / 3';
+    box.append(p, q);
+  }
+
+  // ---------- 時間の進行 ----------
+  function glass(frac, running) {
+    const f = Math.min(1, Math.max(0, frac)), r = f;
+    const top = 25 * (1 - r), bot = f > 0 ? Math.max(1.2, 24 * r) : 0;
+    $('#sTop').setAttribute('y', String(32 - top)); $('#sTop').setAttribute('height', String(top));
+    $('#sBot').setAttribute('y', String(57 - bot)); $('#sBot').setAttribute('height', String(bot));
+    const st = $('#sStream'); st.setAttribute('visibility', running ? 'visible' : 'hidden'); st.setAttribute('y2', String(57 - bot));
+  }
+  let lastMin = minIdx(Date.now()), lastExpired = isExpired(Date.now());
+  function onMinute() {
+    const el = $('#m1-in');
+    if (S.s1 == null && el.value.trim() !== '') { el.value = ''; fb('#m1-fb', '分が変わった。入力途中のパスワードは失効した。'); }
+  }
+  function tick() {
+    const now = Date.now(), d = new Date(now);
+    $('#tNow').textContent = hms(d);
+    if (S.openedAt == null) {
+      $('#tOpen').textContent = '未開封'; $('#tExp').textContent = '—'; $('#tLeft').textContent = '05:00'; glass(0, false);
+    } else if (S.fin != null) {
+      $('#tOpen').textContent = stampS(S.openedAt); $('#tExp').textContent = '失効しない'; $('#tLeft').textContent = '停止';
+      glass((S.fin - S.openedAt) / LIFE, false);
+    } else {
+      const left = Math.max(0, S.openedAt + LIFE - now);
+      $('#tOpen').textContent = stampS(S.openedAt); $('#tExp').textContent = stampS(S.openedAt + LIFE); $('#tLeft').textContent = dur(left);
+      glass(1 - left / LIFE, left > 0);
+    }
+    if (S.openedAt != null && S.s1 == null) {
+      const sec = 60 - d.getSeconds() - d.getMilliseconds() / 1000;
+      $('#m1-clock').textContent = hms(d);
+      $('#m1-sec').textContent = Math.ceil(sec) + '秒';
+      $('#m1-bar').style.transform = 'scaleX(' + (sec / 60).toFixed(4) + ')';
+      $('#m1-life').classList.toggle('dying', sec <= 10);
+    }
+    if (S.s2burn != null) updateBurn(now);
+    if (cells && S.s3 == null) updateBoard(d);
+    if (S.hints.vault >= 3 && S.fin == null) { const li = document.querySelector('.hints[data-k="vault"] li:nth-child(3)'); if (li) li.textContent = HINTS.vault[2](); }
+    const mi = minIdx(now);
+    if (mi !== lastMin) { lastMin = mi; onMinute(); }
+    const ex = isExpired(now);
+    if (ex !== lastExpired) { lastExpired = ex; render(); }
+  }
+
+  // ---------- 操作 ----------
+  $('#sealBtn').addEventListener('click', () => { $('#sealBtn').hidden = true; $('#sealConfirm').hidden = false; });
+  $('#sealNo').addEventListener('click', () => { $('#sealBtn').hidden = false; $('#sealConfirm').hidden = true; });
+  $('#sealYes').addEventListener('click', () => {
+    if (S.openedAt == null) { S.openedAt = Date.now(); save(); }
+    render();
+    setTimeout(() => $('#m1').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 200);
+  });
+  $('#m2-open').addEventListener('click', () => { $('#m2-open').hidden = true; $('#m2-confirm').hidden = false; });
+  $('#m2-no').addEventListener('click', () => { $('#m2-open').hidden = false; $('#m2-confirm').hidden = true; });
+  $('#m2-yes').addEventListener('click', () => {
+    if (S.s2burn == null) { S.s2burn = Date.now(); save(); }
+    render();
+    $('#m2-letter').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+  });
+  const forms = { '#m1-form': ['#m1-in', checkM1], '#m2-form': ['#m2-in', checkM2], '#m3-form': ['#m3-in', checkM3], '#v-form': ['#v-in', checkVault] };
+  for (const f in forms) $(f).addEventListener('submit', e => {
+    e.preventDefault();
+    const [inp, fn] = forms[f];
+    if (isExpired(Date.now())) return render();
+    fn($(inp).value);
+  });
+  $('#copyBtn').addEventListener('click', () => {
+    const text = $('#shareText').value, note = $('#shareNote');
+    const fallback = () => { $('#shareText').select(); note.textContent = '文を選択しました。コピーして送ってください。'; };
+    try { navigator.clipboard.writeText(text).then(() => { note.textContent = '結果とリンクをコピーしました。LINE や DM にそのまま貼り付けて送れます。'; }, fallback); } catch (e) { fallback(); }
+  });
+
+  $('#resetBtn').addEventListener('click', () => { $('#resetBtn').hidden = true; $('#resetConfirm').hidden = false; });
+  $('#resetNo').addEventListener('click', () => { $('#resetBtn').hidden = false; $('#resetConfirm').hidden = true; });
+  $('#resetYes').addEventListener('click', async () => {
+    S = DEF();
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    if (remote) { try { await remote.set(DEF()); } catch (e) {} }
+    location.reload();
+  });
+
+  render();
+  setInterval(tick, 100);
+  initRemote();
+})();
+</script>
+</body>
+</html>
